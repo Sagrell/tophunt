@@ -49,14 +49,4 @@ public class PlayerController : MonoBehaviour {
         cameraAnimator.SetBool("isMoving", isMoving);
         _RBTransform.position = currPosition;
     }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        //Если игрока коснулась мышь, вызывается метод у мыши и активируется ивент
-        if(other.CompareTag("Bat"))
-        {
-            other.GetComponent<Bat>().HitPlayer();
-            EventManager.TriggerEvent("HitPlayer");
-        }
-    }
 }

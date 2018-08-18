@@ -1,13 +1,9 @@
 ﻿using System.Collections;
 using UnityEngine;
 
+// Класс мыши (т.к. проект маленький и дальнейшее добавление мышей и расширение не подразумевается, 
+// вся логика полета мыши проходит в этом классе)
 public class Bat : MonoBehaviour {
-    //Константы
-    const float MIN_DISTANCE = 20f;
-    const float MAX_DISTANCE = 100f;
-    const float MIN_HEIGHT = 15f;
-    const float MAX_HEIGHT = 35f;
-
     [Header("Скорость мыши:")]
     public float speed;
     [Header("Настройки полета:")]
@@ -35,18 +31,14 @@ public class Bat : MonoBehaviour {
         playerT = FindObjectOfType<PlayerController>().transform;
 
         //Задается случайная позиция
-        _transform.position = playerT.position + 
-            GenerateRandomPointOnAnulus(
-                Random.Range(MIN_DISTANCE, MAX_DISTANCE), 
-                Random.Range(MIN_HEIGHT - playerT.position.y, MAX_HEIGHT - playerT.position.y)
-            );
+        _transform.position = playerT.position + PointGenerator.GenerateRandomPointOnAnulus();
 
         //Генерируется сфера
         GenerateSphere();
         //Запускается мышь
         StartCoroutine(Run());
     }
-
+    //Запустить цикл полета мыши
     IEnumerator Run()
     {
         //Ждет от 1 до 10 сек
@@ -62,10 +54,10 @@ public class Bat : MonoBehaviour {
     {
         //Поворот в сторону цели
         _transform.rotation = Quaternion.LookRotation(target - _transform.position);
-        //Полет
+        //Полет, пока дистанция до цели не будет минимальной
         while (Vector3.Distance(_transform.position,target)>0.1f)
         {
-            //Линейно перемещаем мышь в сторону цели
+            //Линейно перемещение мыши в сторону цели
             _transform.position = Vector3.MoveTowards(_transform.position, target, speed*Time.deltaTime);
             //Синусоидное колебание (эффект полета мыши)
             _transform.position += _transform.up * Mathf.Sin(Time.time * frequency) * magnitude;
@@ -87,7 +79,7 @@ public class Bat : MonoBehaviour {
         //Уничтожает текущую
         Destroy(currentSphere);
         //Задает новую позицию
-        spherePosition = playerT.position + GenerateRandomPointOnAnulus(Random.Range(20f, 100f), Random.Range(14f, 34f));
+        spherePosition = playerT.position + PointGenerator.GenerateRandomPointOnAnulus();
         //Задает текущую сферу
         currentSphere = Instantiate(sphere, spherePosition, Quaternion.identity);
     }
@@ -101,14 +93,11 @@ public class Bat : MonoBehaviour {
             StopAllCoroutines();
             StartCoroutine(Run());
         }
-    }
-
-    //Генерация координат, лежащих внутри "кольца"
-    Vector3 GenerateRandomPointOnAnulus(float distance, float height)
-    {
-        //Генерируется случайный угол
-        float angle = Random.Range(0f, 360f);
-        //Генерируется координата на необходимом расстоянии и высоте
-        return new Vector3(Mathf.Cos(angle) * distance, height, Mathf.Sin(angle) * distance);
+        //Если мышь коснулась игрока, вызывается метод у мыши и активируется ивент
+        if (other.CompareTag("Player"))
+        {
+            HitPlayer();
+            EventManager.TriggerEvent("HitPlayer");
+        }
     }
 }
