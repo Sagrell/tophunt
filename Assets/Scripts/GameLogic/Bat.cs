@@ -7,10 +7,8 @@ public class Bat : MonoBehaviour {
     [Header("Скорость мыши:")]
     public float speed;
     [Header("Настройки полета:")]
-    //Частота коллебаний 
-    public float frequency;
-    //Амблитуда колебаний
-    public float magnitude;
+    //Скорость поворота
+    public float rotationSpeed;
     [Header("Префаб сферы:")]
     public GameObject sphere;
 
@@ -21,7 +19,8 @@ public class Bat : MonoBehaviour {
 
     //Позиция сферы
     Vector3 spherePosition;
-
+    //Направление мыши
+    Vector3 currDirection;
     //Кэш переменная
     Transform _transform;
 
@@ -29,6 +28,7 @@ public class Bat : MonoBehaviour {
     void Start () {
         _transform = transform;
         playerT = FindObjectOfType<PlayerController>().transform;
+        currDirection = Vector3.zero;
 
         //Задается случайная позиция
         _transform.position = playerT.position + PointGenerator.GenerateRandomPointOnAnulus();
@@ -42,7 +42,9 @@ public class Bat : MonoBehaviour {
     IEnumerator Run()
     {
         //Ждет от 1 до 10 сек
-        yield return new WaitForSeconds(Random.Range(1f,10f));
+        //yield return new WaitForSeconds(Random.Range(1f,10f));
+        //Направляет мышь изначально в сторону игрока
+        currDirection = (playerT.position - _transform.position).normalized;
         //Летит к месту, где находится игрок в данный момент
         yield return FlyTo(playerT.position);
         //После чего летит к своей сфере
@@ -52,15 +54,20 @@ public class Bat : MonoBehaviour {
     //Лететь к заданным координатам
     IEnumerator FlyTo(Vector3 target)
     {
-        //Поворот в сторону цели
-        _transform.rotation = Quaternion.LookRotation(target - _transform.position);
+        //Нужный вектор направления
+        Vector3 targetDirection = (target - _transform.position).normalized;
+
         //Полет, пока дистанция до цели не будет минимальной
         while (Vector3.Distance(_transform.position,target)>0.1f)
         {
-            //Линейно перемещение мыши в сторону цели
-            _transform.position = Vector3.MoveTowards(_transform.position, target, speed*Time.deltaTime);
-            //Синусоидное колебание (эффект полета мыши)
-            _transform.position += _transform.up * Mathf.Sin(Time.time * frequency) * magnitude;
+            //Вращение мыши на вектор направления
+            _transform.rotation = Quaternion.LookRotation(currDirection);
+            //Поворот вектора направления в сторону нужного
+            currDirection = Vector3.RotateTowards(currDirection, targetDirection, rotationSpeed*Time.deltaTime, 0.0f);
+            //Двигает мышь по вектору направления со скоростью speed
+            _transform.position += currDirection * (speed * Time.deltaTime);
+            //Перерасчет вектора направления
+            targetDirection = (target - _transform.position).normalized;
             yield return null;
         }  
     }
